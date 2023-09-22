@@ -8,14 +8,5 @@ const userRouter = express.Router();
 
 userRouter.route("/")
     .get(userController.count)
-    .post()
-
-userRouter.route("/:id")
-    .get()
-    .patch()
-    .delete()
-
-userRouter.route("/block/:id")
-    .patch()
 
 export default userRouter;
