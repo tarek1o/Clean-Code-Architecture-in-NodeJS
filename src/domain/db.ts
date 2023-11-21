@@ -1,5 +1,18 @@
-import {PrismaClient} from "@prisma/client"
+import {PrismaClient} from "@prisma/client";
 
-const db = new PrismaClient();
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+  ],
+});
 
-export default db;
+if(process.env.NODE_ENV?.toLowerCase() === "development") {
+  prisma.$on('query', (e) => {
+    // console.log(`Prisma query: \x1b[33m ${e.query.replace(/"public"\./g, '')} \x1b[0m`);
+  });
+}
+
+export default prisma;

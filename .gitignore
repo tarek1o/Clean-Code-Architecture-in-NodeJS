@@ -1,3 +1,5 @@
+/dist
 /.env
 /access.log
 /node_modules
+/ToDo.txt

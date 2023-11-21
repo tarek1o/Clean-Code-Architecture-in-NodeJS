@@ -1,24 +1,46 @@
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id             Int         @id @default(autoincrement())
+  name           String      
+  slug           String      @unique
+  description    String?
+  allowedModels  Json[]     
+  isBlocked      Boolean     @default(false)
+  isDeleted      Boolean     @default(false)
+  users          User[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime?  
 }
 
 model User {
-    id       Int      @id @default(autoincrement())
-    username String   @unique
-    email    String   @unique
-    password String
-    posts    Post[]   @relation("UserPosts")
+  id                    Int         @id @default(autoincrement())
+  firstName             String
+  lastName              String
+  email                 String      @unique
+  isEmailVerified       Boolean     @default(false)
+  password              String
+  mobilePhone           String?
+  whatsAppNumber        String?
+  bio                   String?
+  picture               String?
+  refreshToken          String?
+  resetPasswordCode     Json?
+  passwordUpdatedTime   DateTime?
+  isOnline              Boolean     @default(false)
+  isActive              Boolean     @default(true)
+  isBlocked             Boolean     @default(false)
+  isDeleted             Boolean     @default(false)
+  roleId                Int
+  role                  Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime? 
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    title     String
-    content   String
-    authorId  Int
-    author    User     @relation("UserPosts", fields: [authorId], references: [id])
-}
