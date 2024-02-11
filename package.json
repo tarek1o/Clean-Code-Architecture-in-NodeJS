@@ -7,6 +7,7 @@
     "start": "node dist/presentation/index.js",
     "build": "rm -rf dist && tsc",
     "dev": "nodemon src/presentation/index.ts",
+    "postinstall": "prisma generate",
     "migrate": "prisma db push",
     "generate": "prisma generate",
     "studio": "prisma studio"
