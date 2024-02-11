@@ -5,8 +5,9 @@ import authenticationRoutes from "./routes/authenticationRoute"
 import modelPermissionRoutes from "./routes/modelPermissionRoute"
 
 export const routeMounting = (app: Application) => {
-  app.use(`${process.env.apiVersion}/auth`, authenticationRoutes);
-  app.use(`${process.env.apiVersion}/users`, userRoutes);
-  app.use(`${process.env.apiVersion}/roles`, roleRoutes);
-  app.use(`${process.env.apiVersion}/permissions`, modelPermissionRoutes);
+  const apiVersion = process.env.API_Version;
+  app.use(`${apiVersion}/auth`, authenticationRoutes);
+  app.use(`${apiVersion}/users`, userRoutes);
+  app.use(`${apiVersion}/roles`, roleRoutes);
+  app.use(`${apiVersion}/permissions`, modelPermissionRoutes);
 }
