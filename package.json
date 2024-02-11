@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/presentation/index.js",
-    "build": "tsc -w",
+    "build": "rm -rf dist && tsc",
     "dev": "nodemon src/presentation/index.ts",
     "migrate": "prisma db push",
     "generate": "prisma generate",
