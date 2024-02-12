@@ -11,6 +11,7 @@ import { SendEmail } from "../services/SendEmailService";
 import { JWTGenerator } from "../services/JWTGenerator";
 import { RequestManager } from "../services/RequestManager";
 import { UserMapper } from "../mapping/UserMapper";
+import { ExtendedUser } from "../../application/types/ExtendedUser";
 
 @injectable()
 export class AuthenticationController {
@@ -26,6 +27,12 @@ export class AuthenticationController {
       }
     }
     return false;
+  }
+
+  private isCredentialsRight(user: ExtendedUser, request: Request): boolean {
+    const {password, isSignWithSSO, platform} = request.body.input;
+    //(isSignWithSSO && platform && user.isSignWithSSO === isSignWithSSO && user.platform === platform)
+    return bcrypt.compareSync(password, user.password);
   }
 
 	signup = asyncHandler(async(request: Request, response: Response, next: NextFunction) => {
@@ -59,44 +66,52 @@ export class AuthenticationController {
 	});
 
   login = asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
-    const {email, password} = request.body.input;
+    const {email} = request.body.input;
 		const {select, include} = RequestManager.findOptionsWrapper(request);
     const isExist = await this.userService.findFirst({
       where: {
         email: {equals: email, mode: 'insensitive'}
       },
+      select: {
+        id: true,
+        firstName: true, 
+        lastName: true, 
+        email: true, 
+        picture: true,
+        password: true,
+        isDeleted: true,
+        isBlocked: true,
+        refreshToken: true
+      },
+      include
     });
-
-    if(isExist && !isExist.isDeleted && bcrypt.compareSync(password, isExist.password)) {
-      if(isExist.isBlocked) {
-        throw new APIError('Your are blocked, try to contact with our support team', HttpStatusCode.Forbidden);
-      }
-
-      let regeneratedRefreshToken;
-      if(!isExist.refreshToken || (isExist.refreshToken && this.isRefreshTokenExpiredSoon(isExist.refreshToken))) {
-        regeneratedRefreshToken = JWTGenerator.generateRefreshToken(isExist);
-      }
-
-      const updatedUser = await this.userService.update({
-        where: {
-          id: isExist.id,
-        },
-        data: {
-          isActive: true,
-          refreshToken: regeneratedRefreshToken ? regeneratedRefreshToken : undefined
-        },
-        select,
-        include,
-      });
-
-      response.status(HttpStatusCode.OK).json(ResponseFormatter.formate(true, 'Login successfully', [{
-        user: UserMapper.map([updatedUser])[0], 
-        token: JWTGenerator.generateAccessToken(isExist),
-      }]));
-      return;
+    if(!isExist || isExist.isDeleted || !this.isCredentialsRight(isExist, request)) {
+      throw new APIError('Your email or password may be incorrect', HttpStatusCode.BadRequest);
     }
     
-    throw new APIError('Your email or password may be incorrect', HttpStatusCode.BadRequest);
+    if(isExist && isExist.isBlocked) {
+      throw new APIError('Your are blocked, try to contact with our support team', HttpStatusCode.Forbidden);
+    }
+
+    let regeneratedRefreshToken;
+    if(!isExist.refreshToken || (isExist.refreshToken && this.isRefreshTokenExpiredSoon(isExist.refreshToken))) {
+      regeneratedRefreshToken = JWTGenerator.generateRefreshToken(isExist);
+    }
+    const updatedUser = await this.userService.update({
+      where: {
+        id: isExist.id,
+      },
+      data: {
+        isActive: true,
+        refreshToken: regeneratedRefreshToken ? regeneratedRefreshToken : undefined
+      },
+      select,
+      include,
+    });
+    response.status(HttpStatusCode.OK).json(ResponseFormatter.formate(true, 'Login successfully', [{
+      user: UserMapper.map([updatedUser])[0], 
+      token: JWTGenerator.generateAccessToken(isExist),
+    }]));
   });
 
   forgetPassword = asyncHandler(async (request: Request, response: Response, next: NextFunction) => {
